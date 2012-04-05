@@ -4,7 +4,7 @@ Gives you the ability to create a collection of objects, then add, remove, and s
 
 You can use either strongly typed objects, or anonymous types to create the query.
 
-~~~
+`
 var conn = new ElasticSearchSharp.ElasticSearchConnection();
 var collection = new ElasticSearchSharp.ElasticSearchCollection<TestObject>(conn);
 
@@ -19,12 +19,12 @@ var query = new {
 var items = collection.Find(query);
 
 
-~~~
+`
 
 Working on adding features to support linq. This will allow you to query in such a way:
 
 
-~~~
+`
 var conn = new ElasticSearchSharp.ElasticSearchConnection();
 var collection = new ElasticSearchSharp.ElasticSearchCollection<TestObject>(conn);
 
@@ -33,4 +33,4 @@ var items = from item in collection
 			select new {Text = item.Text};
 
 
-~~~
+`
