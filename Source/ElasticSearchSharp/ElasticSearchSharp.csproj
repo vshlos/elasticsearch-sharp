@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\..\Boxfish\Boxfish-trunk\libs\ElasticSearch\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -48,8 +48,22 @@
     <Compile Include="DeleteItemResult.cs" />
     <Compile Include="ElasticSearchCollection.cs" />
     <Compile Include="ElasticSearchConnection.cs" />
+    <Compile Include="ElasticSearchException.cs" />
     <Compile Include="ElasticSearchResult.cs" />
     <Compile Include="ItemOperationResult.cs" />
+    <Compile Include="Query\Attributes\JsonWrapPropertyAttribute.cs" />
+    <Compile Include="Query\BooleanOperator.cs" />
+    <Compile Include="Query\Converters\EnumPropertyConverter.cs" />
+    <Compile Include="Query\Converters\ListObjectWrapConverter.cs" />
+    <Compile Include="Query\Converters\ObjectWrapConverter.cs" />
+    <Compile Include="Query\LinqQueryProvider.cs" />
+    <Compile Include="Query\ElasticSearchQuery.cs" />
+    <Compile Include="Query\Queries\BoolQuery.cs" />
+    <Compile Include="Query\Queries\IdsQuery.cs" />
+    <Compile Include="Query\Queries\MatchAllQuery.cs" />
+    <Compile Include="Query\Queries\QueryBase.cs" />
+    <Compile Include="Query\Queries\TextQuery.cs" />
+    <Compile Include="Query\Queries\TextQueryType.cs" />
     <Compile Include="Search\ElasticSearchResult.cs" />
     <Compile Include="Search\ElasticSearchResultHit.cs" />
     <Compile Include="Search\ElasticSearchResultHits.cs" />

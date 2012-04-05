@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ElasticSearchTest
 {
-    [TestClass]
+    //[TestClass]
     public class BasicTests
     {
         [TestMethod]
@@ -66,6 +66,31 @@ namespace ElasticSearchTest
             };
 
             var objCollection = collection.Find(query);
+        }
+
+        [TestMethod]
+        public void TestFieldSearch()
+        {
+            var conn = new ElasticSearchSharp.ElasticSearchConnection();
+            var collection = new ElasticSearchSharp.ElasticSearchCollection<TestObject>(conn);
+
+
+            var result = collection.Save("vlad", new TestObject() { Name = "vlad", Text = "hello world", Child = new TestObject { Name = "john", Text = "hello world 2" } });
+            Assert.IsTrue(result.Success);
+
+
+            var query = new
+            {
+                fields = new [] {"Name"},
+                query = new
+                {
+                    text = new Dictionary<string, object> {
+                        { "Child.Text", "hello" } 
+                    }
+                }
+            };
+
+            var objCollection = collection.FindFields(query);
         }
     }
 

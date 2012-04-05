@@ -34,6 +34,7 @@ namespace ElasticSearchSharp
         public static void Serialize<T>(TextWriter writer, T item, params JsonConverter[] converters)
         {
             JsonSerializer serializer = new JsonSerializer();
+            serializer.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
             foreach (var converter in converters)
                 serializer.Converters.Add(converter);
             serializer.Serialize(writer, item);

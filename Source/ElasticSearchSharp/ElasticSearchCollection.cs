@@ -7,10 +7,13 @@ using System.IO;
 using ElasticSearchSharp.Search;
 using Newtonsoft.Json.Converters;
 using System.Net;
+using System.Collections;
+using System.Linq.Expressions;
+using ElasticSearchSharp.Query;
 
 namespace ElasticSearchSharp
 {
-    public class ElasticSearchCollection<T>
+    public class ElasticSearchCollection<T> : IQueryable, IQueryable<T>, IOrderedQueryable, IOrderedQueryable<T>
     {
         public ElasticSearchCollection(string collectionName, ElasticSearchConnection connection)
         {
@@ -144,6 +147,23 @@ namespace ElasticSearchSharp
             return results.Hits.Hits;
         }
 
+        public IEnumerable<T> FindFields(object query)
+        {
+            var results = FindAs<FieldSearchResults<T>>(query);
+            if (results == null)
+                return null;
+            return results.Hits.Hits.Select(k => k.Fields);
+        }
+
+        public IEnumerable<T> Find(ElasticSearchQuery query)
+        {
+            if (query.Fields != null)
+                return FindFields(query);
+            else
+                return Find((object)query);
+                
+        }
+
         public IEnumerable<T> Find(object query)
         {
             var results = FindAs<SimpleElasticSearchResult<T>>(query);
@@ -165,18 +185,29 @@ namespace ElasticSearchSharp
 
         private TS FindAs<TS>(object searchQuery, string url = null)
         {
-
-            var request = !string.IsNullOrWhiteSpace(url) ? Connection.CreateRequest(url, "POST") : Connection.CreateRequest("POST", type: CollectionName);
-            using (var requestStream = request.GetRequestStream())
+            try
             {
-                SerializationHelper.Serialize(requestStream, searchQuery, new IsoDateTimeConverter());
+                var request = !string.IsNullOrWhiteSpace(url) ? Connection.CreateRequest(url, "POST") : Connection.CreateRequest("POST", type: CollectionName);
+                using (var requestStream = request.GetRequestStream())
+                {
+                    SerializationHelper.Serialize(requestStream, searchQuery, new IsoDateTimeConverter());
+                }
+
+                var response = request.GetResponse();
+
+                using (var responseStream = response.GetResponseStream())
+                {
+                    return SerializationHelper.Deserialize<TS>(responseStream);
+                }
             }
-
-            var response = request.GetResponse();
-
-            using (var responseStream = response.GetResponseStream())
+            catch (WebException ex)
             {
-                return SerializationHelper.Deserialize<TS>(responseStream);
+                if (ex.Response != null)
+                {
+                    var exception = SerializationHelper.Deserialize<ElasticSearchExceptionObject>(ex.Response.GetResponseStream());
+                    throw new ElasticSearchException(exception, ex);
+                }
+                throw;
             }
         }
 
@@ -210,5 +241,62 @@ namespace ElasticSearchSharp
         {
             return string.Format("{0}m", scrollTime.TotalMinutes);
         }
+
+
+
+
+        #region "IQueryable"
+        public Type ElementType
+        {
+            get { return typeof(T); }
+        }
+
+        public System.Linq.Expressions.Expression Expression
+        {
+            get { return expression; }
+        }
+
+        public IQueryProvider Provider
+        {
+            get { return provider; }
+        }
+
+
+        public IEnumerator GetEnumerator()
+        {
+            return ((IEnumerable)this.provider.Execute(this.expression)).GetEnumerator();
+        }
+
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            return ((IEnumerable<T>)this.provider.Execute(this.expression)).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
+
+        Type IQueryable.ElementType
+        {
+            get { return typeof(T); }
+        }
+
+        Expression IQueryable.Expression
+        {
+            get { return expression; }
+        }
+
+        IQueryProvider IQueryable.Provider
+        {
+            get { return provider; }
+        }
+
+        private LinqQueryProvider provider;
+        private Expression expression;
+
+        #endregion
     }
 }
