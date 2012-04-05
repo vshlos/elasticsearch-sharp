@@ -31,7 +31,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.4.5.1\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -40,9 +44,32 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="ConnectionStringParser.cs" />
+    <Compile Include="DeleteItemResult.cs" />
+    <Compile Include="ElasticSearchCollection.cs" />
+    <Compile Include="ElasticSearchConnection.cs" />
+    <Compile Include="ElasticSearchResult.cs" />
+    <Compile Include="ItemOperationResult.cs" />
+    <Compile Include="Search\ElasticSearchResult.cs" />
+    <Compile Include="Search\ElasticSearchResultHit.cs" />
+    <Compile Include="Search\ElasticSearchResultHits.cs" />
+    <Compile Include="Search\FieldSearchResults.cs" />
+    <Compile Include="Search\HighlightedSearchResult.cs" />
+    <Compile Include="Search\ScrollingElasticSearchResult.cs" />
+    <Compile Include="Search\ScrollingHighlightedSearchResult.cs" />
+    <Compile Include="Search\SimpleElasticSearchResult.cs" />
+    <Compile Include="SerializationHelper.cs" />
+    <Compile Include="Shards.cs" />
+    <Compile Include="Search\FieldElasticSearchResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SaveItemResult.cs" />
+    <Compile Include="Search\HighlightPartialElasticSearch.cs" />
+    <Compile Include="Search\SimpleElasticSearchResultHit.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
