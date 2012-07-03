@@ -73,9 +73,36 @@ namespace ElasticSearchSharp
         }
 
 
+        public SaveItemResult Update(string id, string script)
+        {
+            var url = Connection.CreateSearchRequestUrl(CollectionName, method: null);
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                url = string.Format("{0}/{1}/_update", url, id);
+            }
+
+            var request = Connection.CreateRequest(url, "POST");
+            using (var requestStream = request.GetRequestStream())
+            {
+                //serialize request
+                SerializationHelper.Serialize(requestStream, new { script = script }, new IsoDateTimeConverter());
+
+                //get response
+                var response = request.GetResponse();
+
+                var result = SerializationHelper.Deserialize<SaveItemResult>(response.GetResponseStream());
+
+                return result;
+
+
+            }
+        }
+
+
+
         public DeleteItemResult Remove(string id)
         {
-            var url = Connection.CreateUri(Connection.CreateSearchRequestUrl(this.CollectionName, method:null), id);
+            var url = Connection.CreateUri(Connection.CreateSearchRequestUrl(this.CollectionName, method: null), id);
             try
             {
                 var request = Connection.CreateRequest(url, "DELETE");
@@ -84,7 +111,7 @@ namespace ElasticSearchSharp
                 using (var stream = response.GetResponseStream())
                 {
                     return SerializationHelper.Deserialize<DeleteItemResult>(stream, new IsoDateTimeConverter());
-                    
+
                 }
             }
             catch (WebException ex)
@@ -161,7 +188,7 @@ namespace ElasticSearchSharp
                 return FindFields(query);
             else
                 return Find((object)query);
-                
+
         }
 
         public IEnumerable<T> Find(object query)
