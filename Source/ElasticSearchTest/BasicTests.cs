@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ElasticSearchTest
 {
-    //[TestClass]
+    [TestClass]
     public class BasicTests
     {
         [TestMethod]

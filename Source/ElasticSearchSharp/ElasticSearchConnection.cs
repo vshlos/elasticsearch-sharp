@@ -13,29 +13,20 @@ namespace ElasticSearchSharp
 {
     public class ElasticSearchConnection 
     {
-        public ElasticSearchConnection(string index, string [] hosts)
+        public ElasticSearchConnection(string index, string [] hosts, TimeSpan? timeout = null)
         {
             connection = new ConnectionStringParser { Index = index, Hosts = hosts };
+            this.Timeout = timeout ?? TimeSpan.FromSeconds(5);
         }
 
 
-        public ElasticSearchConnection(string connectionString = "ElasticSearch")
+        public ElasticSearchConnection(string connectionString = "ElasticSearch", TimeSpan? timeout = null)
         {
             connection = ConnectionStringParser.GetSettings(connectionString);
+            this.Timeout = timeout ?? TimeSpan.FromSeconds(5);
         }
 
-        internal HttpWebRequest CreateRequest(string url, string method)
-        {
-            var request = HttpWebRequest.Create(url) as HttpWebRequest;
-            request.Method = method;
-            request.ContentType = "application/json; charset=UTF-8";
-            return request;
-        }
-
-        internal HttpWebRequest CreateRequest(string httpMethod, string type, string index = null, string method = "_search", string parameters = null)
-        {
-            return CreateRequest(CreateSearchRequestUrl(type, index, method, parameters), httpMethod);
-        }
+      
 
         internal string CreateSearchRequestUrl(string type, string index = null, string method = "_search", string parameters = null)
         {
@@ -47,7 +38,7 @@ namespace ElasticSearchSharp
 
             //TODO: figure out a fallback, for now just use the first connection string
 
-            var baseUrl = CreateUri(connection.Hosts[0], index, type, method);
+            var baseUrl = CreateUri(index, type, method);
             if (!string.IsNullOrWhiteSpace(parameters))
             {
                 baseUrl += "?" + parameters;
@@ -62,6 +53,69 @@ namespace ElasticSearchSharp
             return string.Join("/", parts.Where(x => !string.IsNullOrWhiteSpace(x)));
         }
 
+
+        internal T UseConnection<T>(string url, string method, Func<Stream, T> responseHandler, Action<Stream> requestHandler = null )
+        {
+            
+            
+
+            int index;
+            var hostIndexStart = index = hostIndex;
+            bool worked = false;
+            T obj = default(T);
+            
+            do
+            {
+
+                var host = connection.Hosts[index];
+                try
+                {
+
+                    var fullUrl = CreateUri(host, url);
+                    var request = HttpWebRequest.Create(fullUrl) as HttpWebRequest;
+                    request.Timeout = (int)this.Timeout.TotalMilliseconds;
+                    request.Method = method;
+                    request.ContentType = "application/json; charset=UTF-8";
+                    request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
+
+                    if (requestHandler != null)
+                    {
+                        using (var requestStream = request.GetRequestStream())
+                        {
+                            requestHandler(requestStream);
+                        }
+                    }
+
+                    using (var response = request.GetResponse() as HttpWebResponse)
+                    {
+                        obj = responseHandler(response.GetResponseStream());
+                        worked = true;
+                    }
+
+                }
+                catch (WebException ex)
+                {
+                    //well thats why we fail over.
+                    if (ex.Status != WebExceptionStatus.ConnectFailure && ex.Status != WebExceptionStatus.ConnectionClosed && ex.Status != WebExceptionStatus.Timeout)
+                        throw;
+
+                }
+              
+
+                index = (++index) % connection.Hosts.Length;
+            } while (!worked && index != hostIndexStart);
+
+            //update the index to keep it going in a circle.
+            Interlocked.CompareExchange(ref hostIndex, index, hostIndexStart);
+
+
+            if (!worked)
+                throw new WebException("Could not find a server to connect to.");
+
+            return obj;
+        }
+
         public string Index
         {
             get
@@ -71,8 +125,17 @@ namespace ElasticSearchSharp
         }
 
         private ConnectionStringParser connection;
-    }
+  
 
+
+        private int hostIndex = 0;
+        public TimeSpan Timeout { get; set; }
+
+      
+
+
+
+    }
 
    
    

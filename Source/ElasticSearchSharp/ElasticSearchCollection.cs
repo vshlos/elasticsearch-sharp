@@ -55,21 +55,10 @@ namespace ElasticSearchSharp
                 url = string.Format("{0}/{1}", url, id);
             }
 
-            var request = Connection.CreateRequest(url, "PUT");
-            using (var requestStream = request.GetRequestStream())
-            {
-                //serialize request
-                SerializationHelper.Serialize(requestStream, item, new IsoDateTimeConverter());
 
-                //get response
-                var response = request.GetResponse();
-
-                var result = SerializationHelper.Deserialize<SaveItemResult>(response.GetResponseStream());
-
-                return result;
-
-
-            }
+            return Connection.UseConnection(url, "PUT",
+                result => SerializationHelper.Deserialize<SaveItemResult>(result),
+                request => SerializationHelper.Serialize(request, item, new IsoDateTimeConverter()));
         }
 
 
@@ -81,21 +70,10 @@ namespace ElasticSearchSharp
                 url = string.Format("{0}/{1}/_update", url, id);
             }
 
-            var request = Connection.CreateRequest(url, "POST");
-            using (var requestStream = request.GetRequestStream())
-            {
-                //serialize request
-                SerializationHelper.Serialize(requestStream, new { script = script }, new IsoDateTimeConverter());
 
-                //get response
-                var response = request.GetResponse();
-
-                var result = SerializationHelper.Deserialize<SaveItemResult>(response.GetResponseStream());
-
-                return result;
-
-
-            }
+            return Connection.UseConnection(url, "POST",
+                 result => SerializationHelper.Deserialize<SaveItemResult>(result),
+                 request => SerializationHelper.Serialize(request, new { script = script }, new IsoDateTimeConverter()));
         }
 
 
@@ -105,14 +83,10 @@ namespace ElasticSearchSharp
             var url = Connection.CreateUri(Connection.CreateSearchRequestUrl(this.CollectionName, method: null), id);
             try
             {
-                var request = Connection.CreateRequest(url, "DELETE");
 
-                var response = request.GetResponse();
-                using (var stream = response.GetResponseStream())
-                {
-                    return SerializationHelper.Deserialize<DeleteItemResult>(stream, new IsoDateTimeConverter());
+                return Connection.UseConnection(url, "DELETE",
+                    result => SerializationHelper.Deserialize<DeleteItemResult>(result));
 
-                }
             }
             catch (WebException ex)
             {
@@ -214,18 +188,15 @@ namespace ElasticSearchSharp
         {
             try
             {
-                var request = !string.IsNullOrWhiteSpace(url) ? Connection.CreateRequest(url, "POST") : Connection.CreateRequest("POST", type: CollectionName);
-                using (var requestStream = request.GetRequestStream())
-                {
-                    SerializationHelper.Serialize(requestStream, searchQuery, new IsoDateTimeConverter());
-                }
 
-                var response = request.GetResponse();
 
-                using (var responseStream = response.GetResponseStream())
-                {
-                    return SerializationHelper.Deserialize<TS>(responseStream);
-                }
+
+                url = url ?? Connection.CreateSearchRequestUrl(CollectionName);
+
+                return Connection.UseConnection(url, "POST",
+                      result => SerializationHelper.Deserialize<TS>(result),
+                      request => SerializationHelper.Serialize(request, searchQuery, new IsoDateTimeConverter()));
+
             }
             catch (WebException ex)
             {
@@ -244,14 +215,15 @@ namespace ElasticSearchSharp
             var url = Connection.CreateUri(Connection.CreateSearchRequestUrl(this.CollectionName, method: null), id);
             try
             {
-                var request = Connection.CreateRequest(url, "GET");
 
-                var response = request.GetResponse();
-                using (var stream = response.GetResponseStream())
-                {
-                    var dict = SerializationHelper.Deserialize<SimpleElasticSearchResultHit<T>>(stream, new IsoDateTimeConverter());
-                    return dict.Source;
-                }
+                return Connection.UseConnection(url, "GET",
+                   result =>
+                   {
+                       var dict = SerializationHelper.Deserialize<SimpleElasticSearchResultHit<T>>(result, new IsoDateTimeConverter());
+                       return dict.Source;
+                   });
+
+                
             }
             catch (WebException ex)
             {
